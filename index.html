@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generación de Demanda 2026 — Stratesys</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0e14;
+    --bg2: #121620;
+    --bg3: #1a2030;
+    --border: #232b3e;
+    --accent: #3b82f6;
+    --accent2: #6366f1;
+    --text: #e8eaf0;
+    --text2: #8890a8;
+    --text3: #555f78;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --purple: #a855f7;
+
+    --estado-realizado: #22c55e;
+    --estado-progreso: #3b82f6;
+    --estado-pendiente: #f59e0b;
+    --estado-nohizo: #ef4444;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+  .header-meta {
+    font-size: 0.78rem;
+    color: var(--text3);
+    text-align: right;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .stat-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .stat-label { font-size: 0.78rem; color: var(--text2); }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: flex;
+    min-height: calc(100vh - 120px);
+  }
+
+  /* SIDEBAR FILTERS */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 24px 20px;
+    position: sticky;
+    top: 100px;
+    height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+  .sidebar h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+  .filter-section { margin-bottom: 28px; }
+  .filter-section h4 {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .filter-chip {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    margin: 3px 2px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    background: transparent;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .filter-chip:hover { border-color: var(--accent); color: var(--text); }
+  .filter-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 500;
+  }
+  .filter-chip.estado-realizado.active { background: var(--estado-realizado); border-color: var(--estado-realizado); }
+  .filter-chip.estado-progreso.active { background: var(--estado-progreso); border-color: var(--estado-progreso); }
+  .filter-chip.estado-pendiente.active { background: var(--estado-pendiente); border-color: var(--estado-pendiente); color: #000; }
+  .filter-chip.estado-nohizo.active { background: var(--estado-nohizo); border-color: var(--estado-nohizo); }
+
+  .clear-btn {
+    display: block;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.15s;
+  }
+  .clear-btn:hover { background: var(--bg3); color: var(--text); }
+
+  /* CONTENT */
+  .content {
+    flex: 1;
+    padding: 24px 32px;
+    overflow: hidden;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+  }
+  .tab {
+    padding: 10px 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* SEARCH */
+  .search-bar {
+    width: 100%;
+    padding: 10px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    margin-bottom: 20px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-bar:focus { border-color: var(--accent); }
+  .search-bar::placeholder { color: var(--text3); }
+
+  /* RESULTS COUNT */
+  .results-count {
+    font-size: 0.78rem;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+  .results-count strong { color: var(--text2); }
+
+  /* CARDS GRID */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .card[data-estado="Realizado"]::before { background: var(--estado-realizado); }
+  .card[data-estado="En progreso"]::before { background: var(--estado-progreso); }
+  .card[data-estado="Pendiente"]::before { background: var(--estado-pendiente); }
+  .card[data-estado="No se hizo"]::before { background: var(--estado-nohizo); }
+
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(59,130,246,0.12);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.35;
+    flex: 1;
+  }
+  .badge {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .badge-realizado { background: rgba(34,197,94,0.15); color: var(--estado-realizado); border: 1px solid rgba(34,197,94,0.3); }
+  .badge-progreso { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .badge-pendiente { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-nohizo { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+  .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.73rem;
+    color: var(--text2);
+  }
+  .meta-icon { font-size: 0.8rem; opacity: 0.7; }
+
+  .card-tipo {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.68rem;
+    color: var(--text2);
+    margin-bottom: 10px;
+  }
+
+  .card-desc {
+    font-size: 0.78rem;
+    color: var(--text2);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-tech {
+    margin-top: 10px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .tech-tag {
+    padding: 2px 8px;
+    background: rgba(99,102,241,0.12);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 6px;
+    font-size: 0.65rem;
+    color: #818cf8;
+  }
+
+  /* PERSONA VIEW */
+  .persona-group { margin-bottom: 32px; }
+  .persona-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .persona-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .persona-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  .persona-count {
+    font-size: 0.75rem;
+    color: var(--text3);
+  }
+  .persona-stats {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+  }
+  .pstat {
+    text-align: center;
+    padding: 6px 12px;
+    background: var(--bg3);
+    border-radius: 8px;
+  }
+  .pstat-n {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: block;
+  }
+  .pstat-label {
+    font-size: 0.62rem;
+    color: var(--text3);
+  }
+
+  /* CALENDAR VIEW */
+  .calendar-year-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .nav-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { background: var(--bg2); border-color: var(--accent); }
+  .year-label {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .months-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) { .months-grid { grid-template-columns: repeat(2,1fr); } }
+
+  .month-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .month-header {
+    padding: 12px 16px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .month-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .month-count {
+    font-size: 0.7rem;
+    color: var(--text3);
+  }
+  .month-items { padding: 12px; }
+  .month-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(35,43,62,0.5);
+    cursor: pointer;
+  }
+  .month-item:last-child { border-bottom: none; }
+  .month-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .month-item-title {
+    font-size: 0.75rem;
+    color: var(--text);
+    line-height: 1.35;
+  }
+  .month-item-person {
+    font-size: 0.67rem;
+    color: var(--text3);
+    margin-top: 1px;
+  }
+  .month-empty {
+    font-size: 0.75rem;
+    color: var(--text3);
+    padding: 12px;
+    text-align: center;
+  }
+
+  /* TIPO VIEW */
+  .tipo-group { margin-bottom: 32px; }
+  .tipo-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tipo-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    background: var(--bg3);
+  }
+  .tipo-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .tipo-count {
+    font-size: 0.73rem;
+    color: var(--text3);
+    margin-left: auto;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-close:hover { color: var(--text); border-color: var(--text3); }
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.15rem;
+    margin-bottom: 20px;
+    padding-right: 40px;
+    line-height: 1.3;
+  }
+  .modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .modal-field { }
+  .modal-field-label {
+    font-size: 0.67rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-bottom: 4px;
+  }
+  .modal-field-value {
+    font-size: 0.85rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .modal-desc-section {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .modal-desc-label {
+    font-size: 0.67rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+  .modal-desc-text {
+    font-size: 0.83rem;
+    color: var(--text2);
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+  .modal-no-desc {
+    font-size: 0.8rem;
+    color: var(--text3);
+    font-style: italic;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 64px 20px;
+    color: var(--text3);
+  }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* NO DISPLAY */
+  .hidden { display: none !important; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* FILTER TOGGLE (mobile) */
+  .filter-toggle-btn {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: all 0.15s;
+  }
+  .filter-toggle-btn:hover { border-color: var(--accent); color: var(--text); }
+  .filter-badge-count {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  /* DRAWER OVERLAY (mobile) */
+  .drawer-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 150;
+    backdrop-filter: blur(2px);
+  }
+  .drawer-overlay.open { display: block; }
+
+  /* MOBILE RESPONSIVE */
+  @media (max-width: 768px) {
+    header {
+      padding: 14px 16px;
+    }
+    .logo { font-size: 0.95rem; }
+    .header-meta { font-size: 0.68rem; }
+
+    .stats-bar {
+      padding: 10px 16px;
+      gap: 14px;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+    }
+    .stat-num { font-size: 0.95rem; }
+    .stat-label { font-size: 0.7rem; }
+
+    .main { flex-direction: column; }
+
+    /* Sidebar becomes a slide-in drawer on mobile */
+    .sidebar {
+      position: fixed;
+      left: -280px;
+      top: 0;
+      bottom: 0;
+      width: 280px;
+      height: 100vh;
+      z-index: 160;
+      transition: left 0.3s ease;
+      padding-top: 56px;
+    }
+    .sidebar.open { left: 0; }
+
+    .filter-toggle-btn { display: flex; }
+
+    .content {
+      padding: 16px;
+    }
+
+    .tabs {
+      gap: 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab {
+      padding: 10px 14px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .cards-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .months-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .persona-header {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .persona-stats {
+      margin-left: 0;
+      width: 100%;
+      gap: 8px;
+    }
+    .pstat {
+      flex: 1;
+      padding: 5px 8px;
+    }
+
+    .modal {
+      padding: 20px 16px;
+      border-radius: 16px 16px 0 0;
+      max-height: 90vh;
+      margin-top: auto;
+    }
+    .modal-overlay {
+      align-items: flex-end;
+      padding: 0;
+    }
+    .modal-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .modal-title { font-size: 1rem; }
+
+    .search-bar { font-size: 1rem; } /* prevent zoom on iOS */
+  }
+
+  @media (max-width: 480px) {
+    .modal-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Stratesys <span>·</span> Big Data 2026</div>
+  <div class="header-meta">Generación de Demanda<br>Reporte Interactivo</div>
+</header>
+
+<div class="stats-bar" id="statsBar">
+  <!-- populated by JS -->
+</div>
+
+<!-- DRAWER OVERLAY for mobile -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <h3>Filtros</h3>
+    <button class="modal-close" style="position:absolute;top:12px;right:12px;display:none;" id="sidebarCloseBtn" onclick="closeDrawer()">✕</button>
+
+    <div class="filter-section">
+      <h4>Estado</h4>
+      <div id="filterEstado"></div>
+    </div>
+
+    <div class="filter-section">
+      <h4>Persona</h4>
+      <div id="filterPersona"></div>
+    </div>
+
+    <div class="filter-section">
+      <h4>Tipo</h4>
+      <div id="filterTipo"></div>
+    </div>
+
+    <button class="clear-btn" onclick="clearFilters()">✕ Limpiar filtros</button>
+  </aside>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('fichas')">Fichas</div>
+      <div class="tab" onclick="switchTab('personas')">Por Persona</div>
+      <div class="tab" onclick="switchTab('calendario')">Calendario</div>
+      <div class="tab" onclick="switchTab('tipo')">Por Tipo</div>
+    </div>
+
+    <button class="filter-toggle-btn" id="filterToggleBtn" onclick="openDrawer()">
+      ⚙ Filtros <span class="filter-badge-count hidden" id="filterBadge">0</span>
+    </button>
+
+    <input type="text" class="search-bar" id="searchBar" placeholder="🔍  Buscar iniciativa..." oninput="applyFilters()">
+
+    <div class="results-count" id="resultsCount"></div>
+
+    <!-- FICHAS VIEW -->
+    <div id="view-fichas">
+      <div class="cards-grid" id="cardsGrid"></div>
+      <div class="empty-state hidden" id="emptyFichas">
+        <div class="icon">🔍</div>
+        <p>No hay iniciativas con los filtros seleccionados.</p>
+      </div>
+    </div>
+
+    <!-- PERSONAS VIEW -->
+    <div id="view-personas" class="hidden">
+      <div id="personasContainer"></div>
+    </div>
+
+    <!-- CALENDARIO VIEW -->
+    <div id="view-calendario" class="hidden">
+      <div class="calendar-year-nav">
+        <button class="nav-btn" onclick="changeYear(-1)">‹</button>
+        <span class="year-label" id="calYear"></span>
+        <button class="nav-btn" onclick="changeYear(1)">›</button>
+      </div>
+      <div class="months-grid" id="calendarGrid"></div>
+    </div>
+
+    <!-- TIPO VIEW -->
+    <div id="view-tipo" class="hidden">
+      <div id="tipoContainer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+const RAW_DATA = [
+  {no:2, nombre:'Data Driven Stories', estado:'En progreso', responsable:'Juan Giraldo', fechaIniciativa:'2025-10-23', fechaSeguimiento:'2025-11-05', tipo:'Mercadeo', tecnologia:'Big Data', notas:'empezamos en 0 en Enero, vamos a ver a cuantas llegamos\nSe montó la plantilla. Pendiente aprobación Iván para crear las historias de cada uno de nuestros proyectos.'},
+  {no:7, nombre:'Vester', estado:'En progreso', responsable:'Elena', fechaIniciativa:'2025-11-06', fechaSeguimiento:'2026-01-21', tipo:'Evento/Mailing/RRSS', tecnologia:'IoT', notas:'Planificación Webinars IoT + SAP (Campaña Junio 2026): Se ha definido con Vester realizar 5 webinars globales (EMEA, LATAM, NA) los días 9, 11 y 16 de junio en inglés, español y francés/portugués (tentativo).\nAcciones pendientes:\n- Involucrar áreas funcionales para aterrizar el caso de uso.\n- Cerrar colaboración con cliente para el caso real.\n- Marketing: Lanzamiento comunicado partnership en abril y convocatoria webinar en mayo.'},
+  {no:8, nombre:'IoT', estado:'En progreso', responsable:'Elena', fechaIniciativa:'2025-11-06', fechaSeguimiento:'', tipo:'Interno', tecnologia:'IoT', notas:'Generando Portfolio'},
+  {no:null, nombre:'Creación de relación con Microsoft UK para apoyar el desarrollo de agentes de IA', estado:'En progreso', responsable:'Juan Giraldo', fechaIniciativa:'2026-02-12', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Con Roque Jimenez visitamos las oficinas de Microsoft UK y conocimos a 2 líderes de área de desarrollo de agentes'},
+  {no:null, nombre:'Presentación IA Duracell', estado:'En progreso', responsable:'Juan Giraldo', fechaIniciativa:'2026-02-19', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'No puedo estar pero entiendo que la lideran Raúl e Inés'},
+  {no:null, nombre:'Presentación de Data en UKISUG Irlanda', estado:'En progreso', responsable:'Juan Giraldo', fechaIniciativa:'2026-03-01', fechaSeguimiento:'', tipo:'Evento', tecnologia:'IA', notas:'Pendiente aprobación de UKISUG al tema. Manel está liderando el discurso pero mi enfoque sería meter algo de IA o de Data Governance'},
+  {no:null, nombre:'FIDER - Evento Agro en Sevilla', estado:'En progreso', responsable:'Iván Piñar', fechaIniciativa:'2026-02-13', fechaSeguimiento:'', tipo:'Evento presencial', tecnologia:'', notas:'Foro internacional de economía Rural. Presentaremos los casos de Jimas y gestión de frutos rojos, así como participaremos en una mesa redonda.'},
+  {no:null, nombre:'SJD - Stratesys Day en Sevilla', estado:'En progreso', responsable:'Iván Piñar', fechaIniciativa:'Pdte', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Sesión con todos los CIOs de la provincia España para evaluar sinergias, proyectos e iniciativas comunes en Data y Fabric'},
+  {no:5, nombre:'Generación de demanda - Tableau Reporting', estado:'En progreso', responsable:'Lucía', fechaIniciativa:'2026-03-26', fechaSeguimiento:'', tipo:'Comercial', tecnologia:'Tableau', notas:'Sesión de definición de enfoque realizada. Elaborando estructura de presentación conjunta'},
+  {no:null, nombre:'Presentación al CC iniciativa Sector Público', estado:'En progreso', responsable:'Lucía', fechaIniciativa:'2026-03-26', fechaSeguimiento:'', tipo:'Interno', tecnologia:'', notas:'Sesión interna para dar a conocer objetivos de la iniciativa de sector público para este año'},
+  {no:6, nombre:'Generación de demanda - Migración Salesforce', estado:'En progreso', responsable:'María Gómez / Ricardo', fechaIniciativa:'2026-03-26', fechaSeguimiento:'', tipo:'Comercial', tecnologia:'Salesforce', notas:'Sesión de definición de enfoque realizada. Elaborando estructura de presentación conjunta'},
+  {no:null, nombre:'Presentación al CC Business Centre (JAP)', estado:'En progreso', responsable:'Juan Giraldo', fechaIniciativa:'2026-02-19', fechaSeguimiento:'', tipo:'Interno', tecnologia:'', notas:''},
+  {no:null, nombre:'Presentación Data Governance al CC', estado:'En progreso', responsable:'Juan Giraldo', fechaIniciativa:'2026-05-05', fechaSeguimiento:'', tipo:'Interno', tecnologia:'', notas:'La presentará Ignacio'},
+  {no:null, nombre:'Día de Formación Clientes (20-30) en Microsoft Fabric', estado:'En progreso', responsable:'Roberto', fechaIniciativa:'2026-02-18', fechaSeguimiento:'', tipo:'Evento', tecnologia:'', notas:'18/02/26 Se hará en La Finca. Pendiente de asignación de fecha en segunda quincena de Marzo'},
+  {no:null, nombre:'Presentación IA Exolum', estado:'En progreso', responsable:'Juan Giraldo', fechaIniciativa:'2026-03-04', fechaSeguimiento:'', tipo:'Comercial', tecnologia:'', notas:'En preparación con Dani Minchan y Marc Sellares de Nexus'},
+  {no:10, nombre:'Calculadora Servicios Data Quality', estado:'No se hizo', responsable:'Juan Giraldo', fechaIniciativa:'2025-09-22', fechaSeguimiento:'2025-09-22', tipo:'Mercadeo', tecnologia:'Data Governance', notas:'https://dqservicecalculator.streamlit.app/\nSe creó una calculadora para estimar costos de servicios de Data Quality'},
+  {no:9, nombre:'Webinar de Data Governance', estado:'No se hizo', responsable:'Juan Giraldo', fechaIniciativa:'2025-10-21', fechaSeguimiento:'2025-11-05', tipo:'Webinar', tecnologia:'Data Governance', notas:'No se realizó por falta de inscritos\nSe lanzó por LinkedIn para el 21 de Octubre y se está haciendo seguimiento a los inscritos. Al día de hoy van 0 inscritos de valor.'},
+  {no:14, nombre:'Desayuno de IA para la Agricultura', estado:'No se hizo', responsable:'Iván Piñar', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Se hizo algo con OrtiFruit que se puede copiar, pegar y replicar'},
+  {no:15, nombre:'Webinar con Microsoft sobre Fabric y Gobierno del dato (Purview)', estado:'No se hizo', responsable:'Iván Piñar', fechaIniciativa:'', fechaSeguimiento:'', tipo:'Evento', tecnologia:'Fabric', notas:'Previa sesión con Microsoft para alinear el webinar'},
+  {no:16, nombre:'Centro de Excelencia de Microsoft', estado:'No se hizo', responsable:'Iván y Ana Ganfornina', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Ana Ganfornina está planeando y haciendo un borrador para que le ayudemos a complementarlo y así buscar dónde publicarlo'},
+  {no:11, nombre:'Publicitar certificado Microsoft Analytics', estado:'No se hizo', responsable:'Roberto', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Nos ganamos una especialización en Analítica para Stratesys y deberíamos publicitarlo: Se encarga nuestro departamento de marketing y de Microsoft Corporativo'},
+  {no:1, nombre:'Mailing Clientes Data UK', estado:'Pendiente', responsable:'Juan Giraldo', fechaIniciativa:'-', fechaSeguimiento:'2025-11-05', tipo:'Mailing', tecnologia:'Big Data', notas:'Tenemos un listado de más de 100 personas con altos cargos en empresas de UK y Andrew Hart quiere hacer un sistema de mailing para "calentar" a los clientes y así poder hacerles una llamada con un partner contratado en UK.'},
+  {no:17, nombre:'Mailing de Data Governance de Purview', estado:'Pendiente', responsable:'Juan Giraldo', fechaIniciativa:'-', fechaSeguimiento:'2025-11-05', tipo:'Mailing', tecnologia:'Data Governance', notas:'Pendiente: escribir al mail y mandar a Rocío'},
+  {no:12, nombre:'Actividad para comunicar datos de SAP con Google Cortex', estado:'Pendiente', responsable:'Antonio', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:13, nombre:'Actividad para comunicar Salesforce + Fabric (Vivenio)', estado:'Pendiente', responsable:'Emilio', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:19, nombre:'Webinar: Datos para la Sostenibilidad - ESG, ODS, DEI, CSRD', estado:'Pendiente', responsable:'Lucía', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:20, nombre:'Reason to call: Migración DataServices a Datasphere', estado:'Pendiente', responsable:'María Gómez', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:21, nombre:'Actividad para comunicar SFSF + Fabric (Ribera)', estado:'Pendiente', responsable:'María Vega', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:22, nombre:'Mailing de Data Governance de Open Metadata', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Pendiente: escribir al mail y mandar a Rocío'},
+  {no:23, nombre:'Webinar: Fabric para Ventas', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Planificado segunda quincena de Octubre'},
+  {no:24, nombre:'Webinar: Fabric para RRHH', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Planificado primera semana de Noviembre'},
+  {no:25, nombre:'Novedades de Fabric y Power BI: Trasladar reunión mensual a clientes', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:26, nombre:'Reason to call: PowerBI → Microsoft Fabric, ¿Qué se puede hacer?', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:27, nombre:'Reason to call: Herramientas de código abierto para Gobierno del Dato', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:28, nombre:'Reason to call: Automatizo procesos de calidad del dato de People', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:29, nombre:'Reason to call: Cómo gobernar el dato en la era de la IA (GDPR, EU IA)', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:30, nombre:'Reason to call: Analítica de Success Factors con Power BI', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:31, nombre:'Reason to call: Analítica integrando Finanzas con People', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:32, nombre:'Reason to call: Datos históricos SAP en GCP con datos vivos SAP', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:33, nombre:'Reason to call: Conectores para migrar datos de BW a S4HANA', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:34, nombre:'Reason to call: Conectores para migrar datos de BW a Google Cloud Platform', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:35, nombre:'Reason to call: Conectores para migrar datos de BW a Microsoft Fabric', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:36, nombre:'Reason to call: Conectores para migrar datos de BW a Salesforce', estado:'Pendiente', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:39, nombre:'Data Governance para explotar datos con IA en Virgin Media O2', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2025-09-01', fechaSeguimiento:'2025-09-29', tipo:'Evento', tecnologia:'Data Governance', notas:'Pendiente hacer seguimiento a Google UK'},
+  {no:40, nombre:'Envío de micrositio a AstraZeneca', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2025-09-15', fechaSeguimiento:'2025-09-29', tipo:'Mercadeo', tecnologia:'Data Governance', notas:'Después de la presentación de UKISUG en el Q2, conocimos a Simon Bradford, Head of Analytics de AstraZeneca.'},
+  {no:42, nombre:'Micrositio Centrica', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2025-09-15', fechaSeguimiento:'2025-09-29', tipo:'Mercadeo', tecnologia:'Analytics', notas:'Enviada al cliente y con este micrositio le abrieron una sesión exploratoria adicional a Andrew.'},
+  {no:38, nombre:'Sacar a comer a los de Alsea', estado:'Realizado', responsable:'Germán', fechaIniciativa:'2025-09-16', fechaSeguimiento:'', tipo:'Comercial', tecnologia:'Fabric', notas:'Facturamos 800K al año con ellos y los debemos sacar a comer de vez en cuando'},
+  {no:44, nombre:'RFI Diputación de Barcelona', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2025-10-20', fechaSeguimiento:'2025-11-05', tipo:'RFI', tecnologia:'Data Governance', notas:'Se pidió llenar la RFI a Collibra y a Informatica. Collibra dijo que no, Informatica la llenó y se le envió a la Diputación.'},
+  {no:43, nombre:'Mesa Redonda UK + Latam', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2025-11-05', fechaSeguimiento:'2025-11-05', tipo:'Evento', tecnologia:'-', notas:'Pendientes resultados'},
+  {no:41, nombre:'Webinar BDC + DataGov + IA', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2025-11-11', fechaSeguimiento:'2025-11-05', tipo:'Webinar', tecnologia:'IA', notas:'Bea se ha encargado de enviar mails a los asistentes y los ejecutivos de cuentas'},
+  {no:3, nombre:'Data Governance a Socios', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2025-11-15', fechaSeguimiento:'2025-12-03', tipo:'Mercadeo', tecnologia:'Data Governance', notas:'Se dio la charla pero no se ha hecho seguimiento. ¿Cómo se hace seguimiento a esto?'},
+  {no:4, nombre:'Casa Tarradellas al CC', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2025-11-15', fechaSeguimiento:'2025-12-04', tipo:'Mercadeo', tecnologia:'IA', notas:''},
+  {no:46, nombre:'Santander Day', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2025-11-27', fechaSeguimiento:'2025-11-27', tipo:'Evento', tecnologia:'Data Governance', notas:'Se habló sobre Gobierno del Dato'},
+  {no:45, nombre:'Inventario Activos Digitales - Roque', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2025-12-02', fechaSeguimiento:'2025-12-02', tipo:'Mercadeo', tecnologia:'Analytics', notas:'Se envió un listado de activos digitales a Roque para incluir en un listado liderado por Javier Ramirez'},
+  {no:null, nombre:'Presentación IA JAP', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2026-02-10', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Pendiente seguimiento a Lara para ver si quiere seguir adelante con algún proyecto'},
+  {no:null, nombre:'Presentación de Data Governance a CARM con Roque Jiménez', estado:'Realizado', responsable:'Juan Giraldo', fechaIniciativa:'2026-02-15', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Se hizo presentación de lo mismo que se le hizo a AMB'},
+  {no:18, nombre:'Dashboard Day VMO2', estado:'Realizado', responsable:'Lucía', fechaIniciativa:'2025-10-08', fechaSeguimiento:'', tipo:'', tecnologia:'PowerBI', notas:''},
+  {no:37, nombre:'Actividad para comunicar Data Wash para integrar datos de SAP a Fabric', estado:'Realizado', responsable:'Antonio', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Proyecto realizado. Pendiente de definir actividad'},
+  {no:47, nombre:'Evento sector educación Microsoft', estado:'Realizado', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Pendiente hacer seguimiento a los leads del evento del 6 de marzo'},
+  {no:48, nombre:'Campaña Microsoft Fabric Q1', estado:'Realizado', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+  {no:49, nombre:'Bilbao: Data', estado:'Realizado', responsable:'Por definir', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Pendiente hacer seguimiento a los leads del evento'},
+  {no:50, nombre:'Generación de demanda - Dashboard Seguimiento Mantenimiento', estado:'Realizado', responsable:'Ricardo', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Hemos mejorado el servicio con la generación de un dashboard para seguir la operativa de forma mensual.'},
+  {no:51, nombre:'Microsoft Fabric Desayuno', estado:'Realizado', responsable:'Roberto', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Pendiente seguimiento del estado de las iniciativas que nacieron de ahí'},
+  {no:52, nombre:'Fabric: La plataforma unificada que convierte tus datos en decisiones inteligentes', estado:'Realizado', responsable:'Roberto', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:'Evento se realizó el 15 de Octubre'},
+  {no:null, nombre:'Moeve - Fabric + Agentes copilot', estado:'Realizado', responsable:'Roberto', fechaIniciativa:'', fechaSeguimiento:'', tipo:'', tecnologia:'', notas:''},
+];
+
+// ---- STATE ----
+let activeFilters = { estado: [], persona: [], tipo: [] };
+let currentTab = 'fichas';
+let calYear = 2026;
+let filteredData = [...RAW_DATA];
+
+// ---- HELPERS ----
+function getEstadoKey(e) {
+  if (e === 'Realizado') return 'realizado';
+  if (e === 'En progreso') return 'progreso';
+  if (e === 'Pendiente') return 'pendiente';
+  if (e === 'No se hizo') return 'nohizo';
+  return 'pendiente';
+}
+
+function getEstadoColor(e) {
+  const map = { 'Realizado':'#22c55e','En progreso':'#3b82f6','Pendiente':'#f59e0b','No se hizo':'#ef4444' };
+  return map[e] || '#8890a8';
+}
+
+function formatDate(d) {
+  if (!d || d === '-' || d === 'Pdte') return d || '—';
+  if (d.includes('-') && d.length === 10) {
+    const [y,m,dd] = d.split('-');
+    const mnames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    return `${dd} ${mnames[parseInt(m)-1]} ${y}`;
+  }
+  return d;
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  return name.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase();
+}
+
+function getAvatarColor(name) {
+  const colors = ['#3b82f6','#6366f1','#8b5cf6','#a855f7','#ec4899','#f43f5e','#f97316','#10b981','#14b8a6','#0ea5e9'];
+  let hash = 0;
+  for (let c of (name||'')) hash += c.charCodeAt(0);
+  return colors[hash % colors.length];
+}
+
+const TIPO_ICONS = {
+  'Mercadeo':'📣', 'Evento':'🎤', 'Webinar':'💻', 'Mailing':'✉️', 'Comercial':'🤝',
+  'Interno':'🏢', 'RFI':'📋', 'Evento presencial':'🏛️', 'Evento/Mailing/RRSS':'📱',
+};
+function getTipoIcon(t) { return TIPO_ICONS[t] || '📌'; }
+
+// ---- DISTINCT VALUES ----
+const allEstados = [...new Set(RAW_DATA.map(d=>d.estado).filter(Boolean))];
+const allPersonas = [...new Set(RAW_DATA.map(d=>d.responsable).filter(Boolean).filter(p=>p!=='Por definir'))].sort();
+const allTipos = [...new Set(RAW_DATA.map(d=>d.tipo).filter(Boolean))].sort();
+
+// ---- INIT FILTERS ----
+function initFilters() {
+  const emap = {'Realizado':'realizado','En progreso':'progreso','Pendiente':'pendiente','No se hizo':'nohizo'};
+  const elabels = {'Realizado':'Realizado','En progreso':'En progreso','Pendiente':'Pendiente','No se hizo':'No se hizo'};
+  const fe = document.getElementById('filterEstado');
+  allEstados.forEach(e => {
+    const chip = document.createElement('span');
+    chip.className = `filter-chip estado-${emap[e]}`;
+    chip.textContent = elabels[e];
+    chip.onclick = () => toggleFilter('estado', e, chip);
+    fe.appendChild(chip);
+  });
+
+  const fp = document.getElementById('filterPersona');
+  allPersonas.forEach(p => {
+    const chip = document.createElement('span');
+    chip.className = 'filter-chip';
+    chip.textContent = p.split(' ')[0];
+    chip.title = p;
+    chip.onclick = () => toggleFilter('persona', p, chip);
+    fp.appendChild(chip);
+  });
+
+  const ft = document.getElementById('filterTipo');
+  allTipos.forEach(t => {
+    const chip = document.createElement('span');
+    chip.className = 'filter-chip';
+    chip.textContent = t;
+    chip.onclick = () => toggleFilter('tipo', t, chip);
+    ft.appendChild(chip);
+  });
+}
+
+function toggleFilter(key, val, chip) {
+  const arr = activeFilters[key];
+  const idx = arr.indexOf(val);
+  if (idx === -1) { arr.push(val); chip.classList.add('active'); }
+  else { arr.splice(idx,1); chip.classList.remove('active'); }
+  updateFilterBadge();
+  applyFilters();
+}
+
+function clearFilters() {
+  activeFilters = { estado:[], persona:[], tipo:[] };
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  document.getElementById('searchBar').value = '';
+  updateFilterBadge();
+  applyFilters();
+}
+
+// ---- FILTER LOGIC ----
+function applyFilters() {
+  const q = document.getElementById('searchBar').value.toLowerCase();
+  filteredData = RAW_DATA.filter(d => {
+    if (activeFilters.estado.length && !activeFilters.estado.includes(d.estado)) return false;
+    if (activeFilters.persona.length && !activeFilters.persona.some(p => d.responsable && d.responsable.includes(p.split(' ')[0]))) return false;
+    if (activeFilters.tipo.length && !activeFilters.tipo.includes(d.tipo)) return false;
+    if (q && !d.nombre.toLowerCase().includes(q) && !(d.notas||'').toLowerCase().includes(q) && !(d.responsable||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  renderCurrentView();
+  updateStats();
+}
+
+function updateStats() {
+  const bar = document.getElementById('statsBar');
+  const total = filteredData.length;
+  const counts = {};
+  filteredData.forEach(d => { counts[d.estado] = (counts[d.estado]||0)+1; });
+  bar.innerHTML = `
+    <div class="stat"><span class="stat-num">${total}</span><span class="stat-label">iniciativas</span></div>
+    <div class="stat"><span class="stat-dot" style="background:#22c55e"></span><span class="stat-num">${counts['Realizado']||0}</span><span class="stat-label">Realizadas</span></div>
+    <div class="stat"><span class="stat-dot" style="background:#3b82f6"></span><span class="stat-num">${counts['En progreso']||0}</span><span class="stat-label">En progreso</span></div>
+    <div class="stat"><span class="stat-dot" style="background:#f59e0b"></span><span class="stat-num">${counts['Pendiente']||0}</span><span class="stat-label">Pendientes</span></div>
+    <div class="stat"><span class="stat-dot" style="background:#ef4444"></span><span class="stat-num">${counts['No se hizo']||0}</span><span class="stat-label">No se hizo</span></div>
+  `;
+  document.getElementById('resultsCount').innerHTML = `Mostrando <strong>${total}</strong> de ${RAW_DATA.length} iniciativas`;
+}
+
+// ---- TABS ----
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const tabs = ['fichas','personas','calendario','tipo'];
+    t.classList.toggle('active', tabs[i]===tab);
+  });
+  document.getElementById('view-fichas').classList.toggle('hidden', tab!=='fichas');
+  document.getElementById('view-personas').classList.toggle('hidden', tab!=='personas');
+  document.getElementById('view-calendario').classList.toggle('hidden', tab!=='calendario');
+  document.getElementById('view-tipo').classList.toggle('hidden', tab!=='tipo');
+  renderCurrentView();
+}
+
+function renderCurrentView() {
+  if (currentTab==='fichas') renderFichas();
+  else if (currentTab==='personas') renderPersonas();
+  else if (currentTab==='calendario') renderCalendario();
+  else if (currentTab==='tipo') renderTipo();
+}
+
+// ---- FICHAS ----
+function renderFichas() {
+  const grid = document.getElementById('cardsGrid');
+  const empty = document.getElementById('emptyFichas');
+  if (!filteredData.length) {
+    grid.innerHTML=''; empty.classList.remove('hidden'); return;
+  }
+  empty.classList.add('hidden');
+  grid.innerHTML = filteredData.map((d,i) => cardHTML(d,i)).join('');
+}
+
+function cardHTML(d, idx) {
+  const ekey = getEstadoKey(d.estado);
+  const ebadge = `badge-${ekey}`;
+  const tech = d.tecnologia && d.tecnologia!=='-' ? `<div class="card-tech"><span class="tech-tag">${d.tecnologia}</span></div>` : '';
+  const tipo = d.tipo ? `<div class="card-tipo">${getTipoIcon(d.tipo)} ${d.tipo}</div>` : '';
+  const desc = d.notas ? `<div class="card-desc">${d.notas}</div>` : '';
+  return `
+    <div class="card" data-estado="${d.estado}" onclick="openModal(${RAW_DATA.indexOf(d)})">
+      <div class="card-header">
+        <div class="card-title">${d.nombre}</div>
+        <span class="badge ${ebadge}">${d.estado}</span>
+      </div>
+      ${tipo}
+      <div class="card-meta">
+        <span class="meta-item"><span class="meta-icon">👤</span> ${d.responsable||'—'}</span>
+        ${d.fechaIniciativa && d.fechaIniciativa!=='-' && d.fechaIniciativa!=='Pdte' ? `<span class="meta-item"><span class="meta-icon">📅</span> ${formatDate(d.fechaIniciativa)}</span>` : ''}
+      </div>
+      ${desc}
+      ${tech}
+    </div>
+  `;
+}
+
+// ---- PERSONAS ----
+function renderPersonas() {
+  const personas = [...new Set(filteredData.map(d=>d.responsable).filter(Boolean))].sort((a,b) => {
+    if (a === 'Por definir') return 1;
+    if (b === 'Por definir') return -1;
+    return a.localeCompare(b);
+  });
+  const container = document.getElementById('personasContainer');
+  if (!personas.length) { container.innerHTML = '<div class="empty-state"><div class="icon">👤</div><p>Sin resultados.</p></div>'; return; }
+  container.innerHTML = personas.map(p => {
+    const items = filteredData.filter(d=>d.responsable===p);
+    const counts = {};
+    items.forEach(d => { counts[d.estado]=(counts[d.estado]||0)+1; });
+    const color = getAvatarColor(p);
+    return `
+      <div class="persona-group">
+        <div class="persona-header">
+          <div class="persona-avatar" style="background:linear-gradient(135deg,${color}99,${color})">${getInitials(p)}</div>
+          <div>
+            <div class="persona-name">${p}</div>
+            <div class="persona-count">${items.length} iniciativa${items.length!==1?'s':''}</div>
+          </div>
+          <div class="persona-stats">
+            ${['Realizado','En progreso','Pendiente','No se hizo'].filter(e=>counts[e]).map(e=>`
+              <div class="pstat">
+                <span class="pstat-n" style="color:${getEstadoColor(e)}">${counts[e]}</span>
+                <span class="pstat-label">${e==='En progreso'?'Progreso':e}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="cards-grid">${items.map(d=>cardHTML(d,0)).join('')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---- CALENDARIO ----
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function changeYear(delta) {
+  calYear += delta;
+  document.getElementById('calYear').textContent = calYear;
+  renderCalendario();
+}
+
+function renderCalendario() {
+  document.getElementById('calYear').textContent = calYear;
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = MESES.map((mes, mi) => {
+    const items = filteredData.filter(d => {
+      if (!d.fechaIniciativa || d.fechaIniciativa==='-' || d.fechaIniciativa==='Pdte') return false;
+      const parts = d.fechaIniciativa.split('-');
+      return parseInt(parts[0])===calYear && parseInt(parts[1])-1===mi;
+    });
+    return `
+      <div class="month-card">
+        <div class="month-header">
+          <span class="month-name">${mes}</span>
+          <span class="month-count">${items.length} iniciativa${items.length!==1?'s':''}</span>
+        </div>
+        <div class="month-items">
+          ${items.length ? items.map(d=>`
+            <div class="month-item" onclick="openModal(${RAW_DATA.indexOf(d)})">
+              <div class="month-dot" style="background:${getEstadoColor(d.estado)}"></div>
+              <div>
+                <div class="month-item-title">${d.nombre}</div>
+                <div class="month-item-person">${d.responsable||''} ${d.tipo ? '· '+d.tipo : ''}</div>
+              </div>
+            </div>
+          `).join('') : '<div class="month-empty">Sin iniciativas</div>'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---- TIPO ----
+function renderTipo() {
+  const tipos = [...new Set(filteredData.map(d=>d.tipo||'Sin tipo').filter(Boolean))].sort();
+  const container = document.getElementById('tipoContainer');
+  if (!tipos.length) { container.innerHTML='<div class="empty-state"><div class="icon">📌</div><p>Sin resultados.</p></div>'; return; }
+  container.innerHTML = tipos.map(t => {
+    const items = filteredData.filter(d=>(d.tipo||'Sin tipo')===t);
+    return `
+      <div class="tipo-group">
+        <div class="tipo-header">
+          <div class="tipo-icon">${getTipoIcon(t)}</div>
+          <div class="tipo-name">${t}</div>
+          <div class="tipo-count">${items.length} iniciativa${items.length!==1?'s':''}</div>
+        </div>
+        <div class="cards-grid">${items.map(d=>cardHTML(d,0)).join('')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---- MODAL ----
+function openModal(idx) {
+  const d = RAW_DATA[idx];
+  if (!d) return;
+  const ekey = getEstadoKey(d.estado);
+  document.getElementById('modalContent').innerHTML = `
+    <div class="modal-title">${d.nombre}</div>
+    <div class="modal-grid">
+      <div class="modal-field">
+        <div class="modal-field-label">Estado</div>
+        <div class="modal-field-value"><span class="badge badge-${ekey}">${d.estado}</span></div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">Responsable</div>
+        <div class="modal-field-value">${d.responsable||'—'}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">Fecha iniciativa</div>
+        <div class="modal-field-value">${formatDate(d.fechaIniciativa)||'—'}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">Último seguimiento</div>
+        <div class="modal-field-value">${formatDate(d.fechaSeguimiento)||'—'}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">Tipo</div>
+        <div class="modal-field-value">${d.tipo ? getTipoIcon(d.tipo)+' '+d.tipo : '—'}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">Tecnología</div>
+        <div class="modal-field-value">${d.tecnologia||'—'}</div>
+      </div>
+    </div>
+    <div class="modal-desc-section">
+      <div class="modal-desc-label">Notas / Descripción</div>
+      ${d.notas ? `<div class="modal-desc-text">${d.notas}</div>` : '<div class="modal-no-desc">Sin notas registradas.</div>'}
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeModalDirect(); });
+
+// ---- DRAWER (mobile) ----
+function openDrawer() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('sidebarCloseBtn').style.display = 'flex';
+}
+function closeDrawer() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+
+function updateFilterBadge() {
+  const count = activeFilters.estado.length + activeFilters.persona.length + activeFilters.tipo.length;
+  const badge = document.getElementById('filterBadge');
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+// ---- BOOT ----
+initFilters();
+updateStats();
+renderFichas();
+</script>
+</body>
+</html>
